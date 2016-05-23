@@ -1,0 +1,3 @@
+# check if the typings directory is created
+> typings
+$ exists typings/index.d.ts

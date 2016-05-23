@@ -1,0 +1,10 @@
+# Other IDEs
+/.plan.md
+/*.sublime-project
+/*.sublime-workspace
+
+# Miscellaneous.
+target
+node_modules
+.DS_STORE
+.baseDir.ts
