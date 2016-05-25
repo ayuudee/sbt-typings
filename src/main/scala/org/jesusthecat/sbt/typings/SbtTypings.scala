@@ -15,7 +15,9 @@ object Import {
 
   object TypingsKeys {
 
-    val appDir = SettingKey[File]("typings-dir", "The directory containing typings.json")
+    val typingsFile = SettingKey[File]("typings-file", "The typings.json to use")
+
+    val typingsOutDir = SettingKey[File]("typings-out-dor", "Where to write /typings")
 
     val prod = SettingKey[Boolean]("typings-prod", "Install production deps only?")
 
@@ -44,10 +46,11 @@ object SbtTypings extends AutoPlugin {
   import JsEngineKeys._
 
   override def projectSettings = Seq(
-    appDir       := baseDirectory.value,
-    prod         := true,
-    typingsStage := runTypings.dependsOn(nodeModules in Plugin).value,
-    typings      := runTypings.dependsOn(nodeModules in Plugin).value(Nil)
+    typingsFile   := (resourceDirectory in Compile).value / "typings.json",
+    typingsOutDir := webTarget.value / "typings",
+    prod          := true,
+    typingsStage  := runTypings.dependsOn(nodeModules in Plugin).value,
+    typings       := runTypings.dependsOn(nodeModules in Plugin).value(Nil)
   )
 
   def runTypings = Def.task { (mx: Seq[(File,String)]) =>
@@ -68,11 +71,15 @@ object SbtTypings extends AutoPlugin {
       IO.move(f1, f2)
     }
 
-    val typingsF = appDir.value / "typings.json"
-    if (!typingsF.exists) {
-      streams.value.log.warn(s"No typings configuration at $typingsF. Add one?")
+    if (!typingsFile.value.exists) {
+      streams.value.log.warn(s"No typings configuration at ${typingsFile.value}. Add one?")
     } else {
-      streams.value.log.info(s"Found typings.json in $appDir. Running ...")
+      // Typings is fairly rooted in the node way of doing things, whereas we
+      // really want everything to find it's way neatly into target. To accommodate,
+      // typings is run in a sandboxed directory and then copied back.
+      val cwd = IO.createTemporaryDirectory
+      IO.copyFile(typingsFile.value, cwd / "typings.json")
+
       SbtJsTask.executeJs(
         (state in typings).value,
         (engineType in typings).value,
@@ -80,10 +87,18 @@ object SbtTypings extends AutoPlugin {
         (nodeModuleDirectories in Plugin).value.map(_.getCanonicalPath),
         shellSource,
         Seq(
-          (appDir in typings).value.getPath,
+          cwd.getPath,
           (prod in typings).value.toString),
         30.seconds)
+
+      val typingsOut = cwd / "typings"
+      if (!typingsOut.exists) streams.value.log.warn(s"No typings output.")
+      else {
+        IO.createDirectory(typingsOutDir.value)
+        IO.copyDirectory(typingsOut, typingsOutDir.value, overwrite = true)
+      }
     }
+
     mx
   }
 

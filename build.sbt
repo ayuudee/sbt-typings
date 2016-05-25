@@ -1,7 +1,7 @@
 sbtPlugin     := true
 organization  := "org.jesusthecat"
 name          := "sbt-typings"
-version       := "0.1.0"
+version       := "0.1.1"
 licenses      +=("Apache-2.0", url("http://www.apache.org/licenses/LICENSE-2.0"))
 scalaVersion  := "2.10.5"
 resolvers     ++= Seq(
@@ -32,7 +32,7 @@ addSbtPlugin("com.typesafe.sbt" %% "sbt-js-engine" % "1.1.4")
 scriptedSettings
 scriptedLaunchOpts <+= version apply { v => s"-Dproject.version=$v" }
 
-// publishMavenStyle := false
-// bintrayRepository in bintray := "sbt-plugins"
-// bintrayOrganization in bintray := None
-// bintrayVcsUrl := Some("git@github.com:ayuudee/sbt-typings.git")
+publishMavenStyle := false
+bintrayRepository in bintray := "sbt-plugins"
+bintrayOrganization in bintray := None
+bintrayVcsUrl := Some("git@github.com:ayuudee/sbt-typings.git")
